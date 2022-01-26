@@ -21,10 +21,12 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    private ArrayList<NewsItem> news;
     private RecyclerView recyclerView;
     private TextView textTitle;
 
@@ -35,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.recyclerView);
         textTitle = findViewById(R.id.textTitle);
+        news = new ArrayList<>();
     }
 
     private class GetNews extends AsyncTask<Void, Void, Void> {
@@ -45,7 +48,8 @@ public class MainActivity extends AppCompatActivity {
             if (null != inputStream) {
                 try {
                     initXMLPullParser(inputStream);
-                } catch (XmlPullParserException e) {
+                }
+                catch (XmlPullParserException | IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -72,11 +76,102 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
 
-        private void initXMLPullParser(InputStream inputStream) throws XmlPullParserException {
+        private void initXMLPullParser(InputStream inputStream) throws XmlPullParserException, IOException {
             Log.d(TAG, "initXMLPullParser: Initializing XML Pull Parser");
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(inputStream, null);
+            parser.next();  // from rss, move to channel
+
+            parser.require(XmlPullParser.START_TAG, null, "rss");   // we are in rss part in codebeautify
+            while (parser.next() != XmlPullParser.END_TAG) {
+                // loop until we get to end of xml file
+                if (parser.getEventType() != XmlPullParser.START_TAG) {
+                    continue;
+                    /* if we don't see opening bracket, continue till you see one
+                     all items are inside channel*/
+                }
+
+                parser.require(XmlPullParser.START_TAG, null, "channel");
+                while (parser.next() != XmlPullParser.END_TAG) {
+
+                    if (parser.getEventType() != XmlPullParser.START_TAG) {
+                        continue;
+                    }
+                    // after entering <channel>, we need to enter <item>
+
+                    if (parser.getName().equals("item")) {
+                        parser.require(XmlPullParser.START_TAG, null, "item");
+
+                        String title="", description="", link="", date="";
+
+
+                        while (parser.next() != XmlPullParser.END_TAG) {
+
+                            if (parser.getEventType() != XmlPullParser.START_TAG) {
+                                continue;
+                            }
+
+                            String tagName = parser.getName();
+                            if (tagName.equals("title")) {
+                                title = getContent(parser, "title");
+                            }
+                            else if (tagName.equals("description")) {
+                                description = getContent(parser, "description");
+                            }
+                            else if (tagName.equals("link")) {
+                                link = getContent(parser, "link");
+                            }
+                            else if (tagName.equals("pubdate")) {
+                                date = getContent(parser, "pubdate");
+                            }
+                            else {
+                                skipTag(parser);
+                            }
+                        }
+
+                        NewsItem item = new NewsItem(title, description, link, date);
+                        news.add(item);
+                    }
+                    else {
+                        skipTag(parser);
+                    }
+                }
+            }
+        }
+
+        private String getContent (XmlPullParser parser, String tagName) throws IOException, XmlPullParserException {
+            String content = "";
+            parser.require(XmlPullParser.START_TAG, null, tagName);
+
+            if (parser.next() == XmlPullParser.TEXT) {
+                content = parser.getText();
+                parser.next();
+            }
+            return content;
+        }
+
+        private void skipTag (XmlPullParser parser) throws XmlPullParserException, IOException {
+            // first check if opening tag or not
+            if (parser.getEventType() != XmlPullParser.START_TAG) {
+                throw new IllegalStateException();
+            }
+
+            int number = 1;
+            while (number != 0) {
+                switch (parser.next()) {
+                    case XmlPullParser.START_TAG:
+                        number++;
+                        break;
+
+                    case XmlPullParser.END_TAG:
+                        number--;
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         }
     }
 }
