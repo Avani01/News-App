@@ -5,6 +5,7 @@ package com.example.newsapp;
 * tags needed from it are title, description, publishing date
 * */
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.AsyncTask;
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<NewsItem> news;
     private RecyclerView recyclerView;
     private TextView textTitle;
+    private NewsAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +40,10 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerView);
         textTitle = findViewById(R.id.textTitle);
         news = new ArrayList<>();
+        adapter = new NewsAdapter(this);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        new GetNews().execute();
     }
 
     private class GetNews extends AsyncTask<Void, Void, Void> {
@@ -54,6 +60,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void unused) {
+            super.onPostExecute(unused);
+            adapter.setNews(news);
         }
 
         private InputStream getInputStream() {
