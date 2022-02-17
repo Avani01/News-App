@@ -41,8 +41,8 @@ public class MainActivity extends AppCompatActivity {
         textTitle = findViewById(R.id.textTitle);
         news = new ArrayList<>();
         adapter = new NewsAdapter(this);
+        recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
         new GetNews().execute();
     }
 
@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setDoInput(true);
-                connection.getInputStream();
+                return connection.getInputStream();
             }
 
             /*catch (MalformedURLException e) {

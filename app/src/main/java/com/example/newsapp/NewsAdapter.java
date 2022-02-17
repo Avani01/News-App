@@ -1,5 +1,6 @@
 package com.example.newsapp;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.view.LayoutInflater;
@@ -32,7 +33,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
         holder.textTitle.setText(news.get(position).getTitle());
         holder.textContent.setText(news.get(position).getDescription());
         holder.textDate.setText(news.get(position).getDate());
@@ -40,7 +41,10 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
         holder.parent.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // TODO: 27-01-2022 to navigate user to website activity
+                // to navigate user to website activity
+                Intent i = new Intent(context, WebsiteActivity.class);
+                i.putExtra("url", news.get(position).getLink());
+                context.startActivity(i);
             }
         });
     }
